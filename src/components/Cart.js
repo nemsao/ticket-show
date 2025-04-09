@@ -1,40 +1,65 @@
-import React from 'react';
-import './Cart.css';
+import React from "react";
+import PropTypes from "prop-types";
+import { useDispatch } from 'react-redux';
+import { removeFromCart } from '../actions'; 
+import { useSelector } from 'react-redux'; // Import useSelector
 
-function Cart({ items, onRemove, onCheckout }) {
-  const calculateTotal = () => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
-
+const Cart = () => {
+    const dispatch = useDispatch(); 
+    const handleRemoveToCart = (product) => {
+        // Gọi action creator để tạo action object
+        const action = removeFromCart(product);
+        // Dispatch action đến Redux store
+        dispatch(action);
+      };
+    
+      const cartItems = useSelector(state => state.cart.items); 
   return (
-    <div className="cart">
-      {items.length === 0 ? (
-        <p>Your cart is empty.</p>
+    <div className="bg-white shadow-md rounded-md p-4 mt-6">
+      <h2 className="text-lg font-bold text-purple-700 mb-4">Your Cart</h2>
+      {cartItems.length === 0 ? (
+        <p className="text-gray-500">Your cart is empty.</p>
       ) : (
-        <>
-          <ul className="cart-items-list">
-            {items.map(item => (
-              <li key={item.id} className="cart-item">
-                <span className="item-name">{item.name}</span>
-                <span className="item-quantity">Qty: {item.quantity}</span>
-                <span className="item-price">@ ${item.price.toFixed(2)}</span>
-                <span className="item-subtotal">Subtotal: ${(item.price * item.quantity).toFixed(2)}</span>
-                <button onClick={() => onRemove(item.id)} className="remove-item-btn">
+        <ul className="space-y-4">
+          {cartItems.map((item) => (
+            <li
+              key={item.id}
+              className="flex justify-between items-center border-b pb-2"
+            >
+              <div>
+                <h3 className="font-medium">{item.type}</h3>
+                <p className="text-sm text-gray-500">{item.eventTitle}</p>
+                <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold">
+                  ${parseFloat(item.price * item.quantity).toFixed(2)}
+                </p>
+                <button
+                  className="text-red-500 underline text-sm mt-2"
+                  onClick={() => handleRemoveToCart(item)}
+                >
                   Remove
                 </button>
-              </li>
-            ))}
-          </ul>
-          <div className="cart-total">
-            <h3>Total: ${calculateTotal().toFixed(2)}</h3>
-          </div>
-          <button onClick={onCheckout} className="checkout-btn">
-            Proceed to Checkout
-          </button>
-        </>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
-}
+};
+
+Cart.propTypes = {
+  cartItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      eventTitle: PropTypes.string.isRequired,
+      type: PropTypes.string.isRequired,
+      price: PropTypes.number.isRequired,
+      quantity: PropTypes.number.isRequired,
+    })
+  ),
+};
 
 export default Cart;

@@ -1,65 +1,68 @@
-import React, { useState } from 'react';
-import './EventItem.css';
+import React from "react";
+import PropTypes from "prop-types";
+import { PlusIcon } from "@heroicons/react/24/solid";
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../actions'; // Make sure the path is correct
 
-function EventItem({ event, onAddToCart }) {
-  const [quantity, setQuantity] = useState(1); // Default quantity to 1
+const EventItem = ({ event }) => {
+  const dispatch = useDispatch();
 
-  const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value, 10);
-    // Prevent negative or zero quantity, maybe cap at available?
-    if (value >= 1 && value <= event.available) {
-        setQuantity(value);
-    } else if (value < 1) {
-        setQuantity(1);
-    } else {
-        setQuantity(event.available); // Cap at max available
-        alert(`Maximum available tickets: ${event.available}`);
-    }
-  };
-
-  const handleAddToCartClick = () => {
-    if (quantity > event.available) {
-        alert(`Only ${event.available} tickets available for ${event.name}.`);
-        setQuantity(event.available > 0 ? event.available : 1); // Reset quantity if needed
-        return;
-    }
-    if (quantity <= 0) {
-        alert("Please enter a valid quantity (at least 1).");
-        return;
-    }
-    onAddToCart(event, quantity);
-    setQuantity(1); // Reset quantity after adding to cart
+  const handleAddToCart = (ticketType, ticketPrice) => {
+    dispatch(
+      addToCart({
+        id: Date.now(),
+        eventId: event.id,
+        eventTitle: event.title,
+        type: ticketType,
+        price: ticketPrice,
+        quantity: 1, // Initially add one ticket
+      })
+    );
   };
 
   return (
-    <div className="event-item">
-      <h3>{event.name}</h3>
-      <p className="event-description">{event.description}</p>
-      <p className="event-price">Price: ${event.price.toFixed(2)}</p>
-      <p className="event-availability">Available: {event.available > 0 ? event.available : 'Sold Out!'}</p>
-      {event.available > 0 && (
-        <div className="event-controls">
-          <label htmlFor={`quantity-${event.id}`}>Quantity:</label>
-          <input
-            type="number"
-            id={`quantity-${event.id}`}
-            name="quantity"
-            min="1"
-            max={event.available} // Set max based on availability
-            value={quantity}
-            onChange={handleQuantityChange}
-            className="quantity-input"
-          />
-          <button onClick={handleAddToCartClick} className="add-to-cart-btn">
-            Add to Cart
-          </button>
-        </div>
-      )}
-       {event.available <= 0 && (
-           <p className="sold-out-message">Sold Out</p>
-       )}
+    <div className="bg-white shadow-md rounded-md p-4 border border-gray-200">
+      <h3 className="text-lg font-bold text-purple-700">{event.title}</h3>
+      <p className="text-gray-500 text-sm">{event.date}</p>
+      <p className="text-gray-500 text-sm mb-4">{event.location}</p>
+      <ul className="space-y-2">
+        {event.tickets.map((ticket, index) => (
+          <li key={index} className="flex justify-between items-center">
+            <span className="text-gray-700">{ticket.type}</span>
+            <div className="flex items-center">
+              <span className="text-gray-800 font-semibold mr-2">
+                ${ticket.price.toFixed(2)}
+              </span>
+              <button
+                onClick={() => handleAddToCart(ticket.type, ticket.price)}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold rounded-full p-2 shadow-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                aria-label={`Add ${ticket.type} ticket to cart`}
+              >
+                <PlusIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
+};
+
+EventItem.propTypes = {
+  event: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    title: PropTypes.string.isRequired,
+    date: PropTypes.string.isRequired,
+    location: PropTypes.string.isRequired,
+    tickets: PropTypes.arrayOf(
+      PropTypes.shape({
+        type: PropTypes.string.isRequired,
+        price: PropTypes.number.isRequired,
+        available: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+  }).isRequired,
+  // onClick prop is removed as we are using Redux
+};
 
 export default EventItem;
